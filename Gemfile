@@ -1,10 +1,9 @@
 # frozen_string_literal: true
 
-source "https://rubygems.org" do
+source "https://rubygems.org"
 
-	git_source(:github) {|repo_name| "https://github.com/#{repo_name}" }
-	gem "thin"
-	gem "faye-websocket"
+git_source(:github) {|repo_name| "https://github.com/#{repo_name}" }
+gem "thin"
+gem "faye-websocket"
 
-	# gem "rails"
-end
+# gem "rails"
