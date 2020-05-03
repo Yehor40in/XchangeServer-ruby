@@ -42,7 +42,6 @@ module DeviceControl
       if Faye::WebSocket.websocket?(env) then
         ws = Faye::WebSocket.new(env, nil, { :ping => KEEPALIVE_TIME })
         ws.on :open do |event|
-          p [:open, @app]
           @clients << ws
           webSocketClient = WebSocketClient.new
           webSocketClient.id = ws.object_id
@@ -61,20 +60,10 @@ module DeviceControl
           identifier = @json['identifier']
 
           if client_type == 'browser' then
-            user_id = @session.authenticate(identifier)
-            if !user_id.nil? then
-              process_browser_incoming_message(user_id)            
-            else
-              forbidden_result(FORBIDDEN)
-            end
+            process_browser_incoming_message(identifier.to_i)         
 
           elsif client_type == 'ios' then
-            device_id = @session.authenticate(identifier)
-            if !device_id.nil? then
-              process_device_incoming_message(device_id)        
-            else
-              forbidden_result(FORBIDDEN)
-            end
+            process_device_incoming_message(identifier.to_i)
           end
 
         end
@@ -122,31 +111,28 @@ module DeviceControl
 
 
     def process_browser_device_get_contacts_request(user_id)
-      if @session.authenticated? user_id then
-        device_id = @json['command_parameters']['device_id'].to_i
-        device_client_info = @session.get_device_info(device_id)
+      device_id = @json['command_parameters']['device_id'].to_i
+      device_client_info = @session.get_device_info(device_id)
 
-        if !device_client_info.nil? then
-          device_client = @clients.select { |client| client.object_id == device_client_info.id }.first
+      if !device_client_info.nil? then
+        device_client = @clients.select { |client| client.object_id == device_client_info.id }.first
 
-          if !@evice_client.nil? then
-            device_client.send({
-              :command => {
-                :name => DEVICE_GET_CONTACTS_REQUEST
-              },
-              :command_parameters => {
-                :request_user_id => user_id
-              }
-            }.to_json)
+        if !@evice_client.nil? then
+          device_client.send({
+            :command => {
+              :name => DEVICE_GET_CONTACTS_REQUEST
+            },
+            :command_parameters => {
+              :request_user_id => user_id
+            }
+          }.to_json)
 
-          end
         end
       end
     end
 
 
     def process_browser_device_get_call_history_request(user_id)
-
       if @session.authenticated? user_id then
         device_id = @json['command_parameters']['device_id'].to_i
         device_client_info = @session.get_device_info(device_id)
@@ -171,75 +157,45 @@ module DeviceControl
 
 
     def process_browser_device_get_location_request(user_id)
+      device_id = @json['command_parameters']['device_id'].to_i
+      device_client_info = @session.get_device_info(device_id)
 
-      if @session.authenticated? user_id then
-        device_id = @json['command_parameters']['device_id'].to_i
-        device_client_info = @session.get_device_info(device_id)
+      if !device_client_info.nil? then
+        device_client = @clients.select{|client| client.object_id == device_client_info.id}.first
 
-        if !device_client_info.nil? then
-          device_client = @clients.select{|client| client.object_id == device_client_info.id}.first
+        if !device_client.nil? then
 
-          if !device_client.nil? then
-            device_client.send({
-              :command => {
-                :name => DEVICE_GET_LOCATION_REQUEST
-              },
-              :command_parameters => {
-                :request_user_id => user_id
-              }
-            }.to_json)
+          device_client.send({
+            :command => {
+              :name => DEVICE_GET_LOCATION_REQUEST
+            },
+            :command_parameters => {
+              :request_user_id => user_id
+            }
+          }.to_json)
 
-          end
-        end
-      end
-    end
-
-
-    def process_browser_device_take_photo_request(user_id)
-
-      if @session.authenticated? user_id then
-        device_id = @json['command_parameters']['device_id'].to_i
-        device_client_info = @session.get_device_info(device_id)
-
-        if !device_client_info.nil? then
-          device_client = @clients.select{|client| client.object_id == device_client_info.id}.first
-
-          if !device_client.nil? then
-            device_client.send({
-              :command => {
-                :name => DEVICE_TAKE_PHOTO_REQUEST
-              },
-              :command_parameters => {
-                :request_user_id => user_id
-              }
-            }.to_json)
-
-          end
         end
       end
     end
 
 
     def process_browser_device_record_video_request(user_id)
+      device_id = @json['command_parameters']['device_id'].to_i
+      device_client_info = @session.get_device_info(device_id)
 
-      if @session.authenticated? user_id then
-        device_id = @json['command_parameters']['device_id'].to_i
-        device_client_info = @session.get_device_info(device_id)
+      if !device_client_info.nil? then
+        device_client = @clients.select{|client| client.object_id == device_client_info.id}.first
 
-        if !device_client_info.nil? then
-          device_client = @clients.select{|client| client.object_id == device_client_info.id}.first
+        if !device_client.nil? then
+          device_client.send({
+            :command => {
+              :name => DEVICE_RECORD_VIDEO_REQUEST
+            },
+            :command_parameters => {
+              :request_user_id => user_id
+            }
+          }.to_json)
 
-          if !device_client.nil? then
-            device_client.send({
-              :command => {
-                :name => DEVICE_RECORD_VIDEO_REQUEST
-              },
-              :command_parameters => {
-                :request_user_id => user_id
-              }
-            }.to_json)
-
-          end
         end
       end
     end
@@ -272,142 +228,94 @@ module DeviceControl
     end
 
 
-    def process_device_info_request(device_id)
-      @client_info = @session.client_infos[@current_client.object_id]
-      device = Device.find(@client_info.device_id)
-      @current_client.send({
-        :status => "1",
-        :command => {
-          :name => CLIENTINFO_RESPONSE
-        },
-        :client_info => {
-          :name => device.name
-        }
-      }.to_json)
-    end
-
-
     def process_device_device_get_contacts_response(device_id)
+      user_id = @json['command_parameters']['request_user_id'].to_i
+      user_client_info = @session.get_user_info(user_id)
 
-      if @session.authenticated? device_id then
-        user_id = @json['command_parameters']['request_user_id'].to_i
-        user_client_info = @session.get_user_info(user_id)
+      if !user_client_info.nil? then
+        user_client = @clients.select{|client| client.object_id == user_client_info.id }.first
 
-        if !user_client_info.nil? then
-          user_client = @clients.select{|client| client.object_id == user_client_info.id }.first
+        if !user_client.nil? then
+          user_client.send({
+            :command => {
+              :name => DEVICE_GET_CONTACTS_RESPONSE
+            },
+            :command_parameters => {
+              :contacts => @json['command_parameters']['contacts'],
+              :response_device_id => device_id
+            }
+          }.to_json)
 
-          if !user_client.nil? then
-            user_client.send({
-              :command => {
-                :name => DEVICE_GET_CONTACTS_RESPONSE
-              },
-              :command_parameters => {
-                :contacts => @json['command_parameters']['contacts']
-              }
-            }.to_json)
-
-          end
         end
       end
     end
 
 
     def process_device_device_get_call_history_response(device_id)
+      user_id = @json['command_parameters']['request_user_id'].to_i
+      user_client_info = @session.get_user_info(user_id)
 
-      if @session.authenticated? device_id then
-        user_id = @json['command_parameters']['request_user_id'].to_i
-        user_client_info = @session.get_user_info(user_id)
+      if !user_client_info.nil? then
+        user_client = @clients.select{|client| client.object_id == user_client_info.id }.first
 
-        if !user_client_info.nil? then
-          user_client = @clients.select{|client| client.object_id == user_client_info.id }.first
+        if !user_client.nil? then
+          user_client.send({
+            :command => {
+              :name => DEVICE_GET_CALL_HISTORY_RESPONSE
+            },
+            :command_parameters => {
+              :call_history_items => @json['command_parameters']['call_history_items'],
+              :response_device_id => device_id
+            }
+          }.to_json)
 
-          if !user_client.nil? then
-            user_client.send({
-              :command => {
-                :name => DEVICE_GET_CALL_HISTORY_RESPONSE
-              },
-              :command_parameters => {
-                :call_history_items => @json['command_parameters']['call_history_items']
-              }
-            }.to_json)
-
-          end
         end
       end
     end
 
 
     def process_device_device_get_location_response(device_id)
-      
-      if @session.authenticated? device_id then
-        user_id = @json['command_parameters']['request_user_id'].to_i
-        user_client_info = @session.get_user_info(user_id)
+      user_id = @json['command_parameters']['request_user_id'].to_i
+      user_client_info = @session.get_user_info(user_id)
 
-        if !user_client_info.nil? then
-          user_client = @clients.select{|client| client.object_id == user_client_info.id }.first
+      if !user_client_info.nil? then
+        user_client = @clients.select{|client| client.object_id == user_client_info.id }.first
 
-          if !user_client.nil? then
-            user_client.send({
-              :command => {
-                :name => DEVICE_GET_LOCATION_RESPONSE
-              },
-              :command_parameters => {
-                :location_latitude => @json['command_parameters']['location_latitude'],
-                :location_longitude => @json['command_parameters']['location_longitude']
-              }
-            }.to_json)
+        if !user_client.nil? then
+          user_client.send({
+            :command => {
+              :name => DEVICE_GET_LOCATION_RESPONSE
+            },
+            :command_parameters => {
+              :location_latitude => @json['command_parameters']['location_latitude'],
+              :location_longitude => @json['command_parameters']['location_longitude'],
+              :response_device_id => device_id
+            }
+          }.to_json)
 
-          end
-        end
-      end
-    end
-
-
-    def process_device_device_take_photo_response(device_id)
-
-      if @session.authenticated? device_id then
-        user_id = @json['command_parameters']['request_user_id'].to_i
-        user_client_info = @session.get_user_info(user_id)
-
-        if !user_client_info.nil? then
-          user_client = @clients.select{|client| client.object_id == user_client_info.id }.first
-
-          if !user_client.nil? then
-            user_client.send({
-              :command => {
-                :name => DEVICE_TAKE_PHOTO_RESPONSE
-              },
-              :command_parameters => {
-                :base64_string_photo => @json['command_parameters']['base64_string_photo']
-              }
-            }.to_json)
-
-          end
         end
       end
     end
 
 
     def process_device_device_record_video_response(device_id)
+      user_id = @json['command_parameters']['request_user_id'].to_i
+      user_client_info = @session.get_user_info(user_id)
 
-      if @session.authenticated? device_id then
-        user_id = @json['command_parameters']['request_user_id'].to_i
-        user_client_info = @session.get_user_info(user_id)
+      if !user_client_info.nil? then
+        user_client = @clients.select{|client| client.object_id == user_client_info.id }.first
 
-        if !user_client_info.nil? then
-          user_client = @clients.select{|client| client.object_id == user_client_info.id }.first
+        if !user_client.nil? then
+          user_client.send({
+            :command => {
+              :name => DEVICE_RECORD_VIDEO_RESPONSE
+            },
+            :command_parameters => {
+              :base64_string_video => @json['command_parameters']['base64_string_video'],
+              :response_device_id => device_id
+            }
+          }.to_json)
 
-          if !user_client.nil? then
-            user_client.send({
-              :command => {
-                :name => DEVICE_RECORD_VIDEO_RESPONSE
-              },
-              :command_parameters => {
-                :base64_string_video => @json['command_parameters']['base64_string_video']
-              }
-            }.to_json)
-
-          end
         end
       end
     end

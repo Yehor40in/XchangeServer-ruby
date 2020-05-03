@@ -22,21 +22,10 @@ module WSUtility
                 @client_infos[key].device_id = id
             end
             @client_infos[key].type = type
-            p @client_infos
         end
 
         def remove(key)
             @client_infos.delete key
-        end
-
-        def authenticate(identifier)
-            key = Digest::MD5.hexdigest(identifier)
-            @auth << key if @auth.index(key).nil?
-            return @auth.index key
-        end
-
-        def authenticated?(id)
-            @auth[id].nil?
         end
 
         def get_device_info(id)
