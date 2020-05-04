@@ -113,11 +113,11 @@ module DeviceControl
     def process_browser_device_get_contacts_request(user_id)
       device_id = @json['command_parameters']['device_id'].to_i
       device_client_info = @session.get_device_info(device_id)
-
+      
       if !device_client_info.nil? then
         device_client = @clients.select { |client| client.object_id == device_client_info.id }.first
-
-        if !@evice_client.nil? then
+      
+        if !device_client.nil? then
           device_client.send({
             :command => {
               :name => DEVICE_GET_CONTACTS_REQUEST
@@ -126,31 +126,6 @@ module DeviceControl
               :request_user_id => user_id
             }
           }.to_json)
-
-        end
-      end
-    end
-
-
-    def process_browser_device_get_call_history_request(user_id)
-      if @session.authenticated? user_id then
-        device_id = @json['command_parameters']['device_id'].to_i
-        device_client_info = @session.get_device_info(device_id)
-
-        if !device_client_info.nil? then
-          device_client = @clients.select {|client| client.object_id == device_client_info.id }.first
-
-          if !device_client.nil? then
-            device_client.send({
-              :command => {
-                :name => DEVICE_GET_CALL_HISTORY_REQUEST
-              },
-              :command_parameters => {
-                :request_user_id => user_id
-              }
-            }.to_json)
-
-          end
         end
       end
     end
@@ -242,29 +217,6 @@ module DeviceControl
             },
             :command_parameters => {
               :contacts => @json['command_parameters']['contacts'],
-              :response_device_id => device_id
-            }
-          }.to_json)
-
-        end
-      end
-    end
-
-
-    def process_device_device_get_call_history_response(device_id)
-      user_id = @json['command_parameters']['request_user_id'].to_i
-      user_client_info = @session.get_user_info(user_id)
-
-      if !user_client_info.nil? then
-        user_client = @clients.select{|client| client.object_id == user_client_info.id }.first
-
-        if !user_client.nil? then
-          user_client.send({
-            :command => {
-              :name => DEVICE_GET_CALL_HISTORY_RESPONSE
-            },
-            :command_parameters => {
-              :call_history_items => @json['command_parameters']['call_history_items'],
               :response_device_id => device_id
             }
           }.to_json)
