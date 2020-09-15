@@ -3,7 +3,7 @@ This is server for to use together with iOS application (url: https://github.com
 
 # Description
 Xchange provides you with the ability to remote control your phone (with having this app installed on it), get contacts list, obtain a live stream from camera and location in the world.
-
+As for now it only works on localhost within your local network.
 
 # Usage
 You can use this software as a skeleton for your project, feel free to fork, improve and play around with this repositories.
